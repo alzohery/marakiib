@@ -1,6 +1,7 @@
 <?php
 
 namespace Database\Seeders;
+use Illuminate\Support\Facades\Hash;
 
 use Illuminate\Database\Seeder;
 use App\Models\User;
@@ -8,296 +9,246 @@ use App\Models\CarType;
 use App\Models\Car;
 use App\Models\Category;
 use App\Models\Tag;
-use App\Models\Option;
-use App\Models\OptionValue;
+use App\Models\Feature;
+use App\Models\FeatureValue;
 use App\Models\ExtraOption;
-use App\Models\Booking;
 use App\Models\Review;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Faker\Factory as Faker;
 
 class AppSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run()
     {
-        // إنشاء مستخدم (private_renter)
-        $renter = User::create([
+        $faker = Faker::create();
+
+        // إنشاء المستخدمين
+        $renter = User::firstOrCreate([
+            'name' => 'suber admin',
+            'email' => 'admin1@example.com',
+            'password' => Hash::make('password123'),
+            'role' => 'admin',
+            'phone_number' => '123445167890',
+            'email_verified_at'=> '2025-08-23T00:58:28.000000Z',
+            'car_license_expiry_date'=> '2026-01-09T00:00:00.000000Z',
+
+            'car_license_image'=> 'licenses/JJlTY6MVjWTRDRst3QI9e9kPBvmDR0D5ipIOxeKe.jpg',
+            
+            'commercial_registration_number'=> '7894824999',
+
+            'address' => 'Mansoura',
+            'slug' => Str::slug('suber admin1'),
+            'is_active' => true,
+            'sort_order' => 0,
+        ]);
+        $renter->assignRole('admin');
+        $renter = User::firstOrCreate([
             'name' => 'Test Renter',
-            'email' => 'renter@example.com',
-            'password' => bcrypt('password123'),
+            'email' => 'renter7@example.com',
+            'password' => Hash::make('password123'),
             'role' => 'private_renter',
-            'phone_number' => '1234567890',
-            'address' => 'Riyadh',
-            'latitude' => 24.7136,
-            'longitude' => 46.6753,
-            'slug' => Str::slug('Test Renter'),
+            'phone_number' => '12345167890',
+            'email_verified_at'=> '2025-08-23T00:58:28.000000Z',
+            'car_license_expiry_date'=> '2026-01-09T00:00:00.000000Z',
+
+            'car_license_image'=> 'licenses/JJlTY6MVjWTRDRst3QI9e9kPBvmDR0D5ipIOxeKe.jpg',
+            
+            'commercial_registration_number'=> '7894824999',
+
+            'address' => 'Mansoura',
+            'slug' => Str::slug('7Test Renter'),
             'is_active' => true,
             'sort_order' => 0,
         ]);
         $renter->assignRole('private_renter');
+        
 
-        // إنشاء مستخدم (customer)
-        $customer = User::create([
-            'name' => 'Test Customer',
-            'email' => 'customer@example.com',
-            'password' => bcrypt('password123'),
+        
+
+        $customer = User::firstOrCreate([
+            'name' => 'mohamed alzohery',
+            'email' => '2mohamedmohasenalzohery@gmail.com',
+            'password' => Hash::make('password123'),
             'role' => 'customer',
-            'phone_number' => '0987654321',
-            'address' => 'Jeddah',
-            'latitude' => 21.4858,
-            'longitude' => 39.1925,
-            'slug' => Str::slug('Test Customer'),
+            'email_verified_at'=> '2025-08-23T00:58:28.000000Z',
+            'car_license_image'=> 'licenses/JJlTY6MVjWTRDRst3QI9e9kPBvmDR0D5ipIOxeKe.jpg',
+            'car_license_expiry_date'=> '2026-01-09T00:00:00.000000Z',
+            'commercial_registration_number'=> '7894824999',
+            'phone_number' => '09187654321',
+            'address' => 'Mansoura',
+            'slug' => Str::slug('2mohamed-mohasen-alzohery'),
             'is_active' => true,
             'sort_order' => 0,
         ]);
         $customer->assignRole('customer');
 
-        // إنشاء نوع سيارة
-        $carType = CarType::create([
-            'slug' => Str::slug('Sedan'),
-            'image' => 'sedan.jpg',
-            'is_active' => true,
-            'sort_order' => 0,
-        ]);
-        $carType->translations()->create([
-            'locale' => 'en',
-            'name' => 'Sedan',
-            'description' => 'Sedan cars for comfortable rides.',
-            'meta_title' => 'Sedan Cars',
-            'meta_description' => 'Explore sedan cars.',
-            'image_alt' => 'Sedan Car Image',
-        ]);
-        $carType->translations()->create([
-            'locale' => 'ar',
-            'name' => 'سيدان',
-            'description' => 'سيارات سيدان لرحلات مريحة.',
-            'meta_title' => 'سيارات سيدان',
-            'meta_description' => 'استكشف سيارات السيدان.',
-            'image_alt' => 'صورة سيارة سيدان',
-        ]);
 
-        // إنشاء سيارة
-        $car = Car::create([
-            'user_id' => $renter->id,
-            'car_type_id' => $carType->id,
-            'model' => '2023',
-            'color' => 'Black',
-            'main_image' => 'car.jpg',
-            'extra_images' => ['extra1.jpg', 'extra2.jpg'],
-            'engine_type' => 'V6',
-            'slug' => Str::slug('Toyota Camry 2023'),
-            'plate_type' => 'white',
-            'rental_price' => 100.00,
-            'availability_start' => now(),
-            'availability_end' => now()->addMonths(6),
-            'is_active' => true,
-            'sort_order' => 0,
-        ]);
-        $car->translations()->create([
-            'locale' => 'en',
-            'name' => 'Toyota Camry',
-            'insurance_type' => 'Comprehensive',
-            'usage_nature' => 'Personal',
-            'description' => 'A reliable sedan.',
-            'meta_title' => 'Toyota Camry 2023',
-            'meta_description' => 'Rent a Toyota Camry 2023.',
-            'image_alt' => 'Toyota Camry 2023 Sedan',
-        ]);
-        $car->translations()->create([
-            'locale' => 'ar',
-            'name' => 'تويوتا كامري',
-            'insurance_type' => 'شامل',
-            'usage_nature' => 'شخصي',
-            'description' => 'سيدان موثوق.',
-            'meta_title' => 'تويوتا كامري 2023',
-            'meta_description' => 'استأجر تويوتا كامري 2023.',
-            'image_alt' => 'سيارة تويوتا كامري 2023 سيدان',
-        ]);
+        // أنواع السيارات
+        $carTypes = [];
+        foreach (['Sedan', 'SUV', 'Hatchback', 'Coupe', 'Convertible'] as $typeName) {
+            $type = CarType::firstOrCreate([
+                'slug' => Str::slug($typeName),
+                'image' => strtolower($typeName) . '.jpg',
+                'is_active' => true,
+                'sort_order' => 0,
+            ]);
+            $type->translations()->create(['locale' => 'en', 'name' => $typeName, 'description' => "$typeName cars"]);
+            $type->translations()->create(['locale' => 'ar', 'name' => $typeName, 'description' => "$typeName سيارات"]);
+            $carTypes[] = $type;
+        }
 
-        // إنشاء تصنيف
-        $category = Category::create([
-            'slug' => Str::slug('Sedan'),
-            'image' => 'sedan.jpg',
-            'is_active' => true,
-            'sort_order' => 0,
-        ]);
-        $category->translations()->create([
-            'locale' => 'en',
-            'name' => 'Sedan',
-            'description' => 'Sedan cars for comfortable rides.',
-            'meta_title' => 'Sedan Cars',
-            'meta_description' => 'Explore sedan cars.',
-            'image_alt' => 'Sedan Car Image',
-        ]);
-        $category->translations()->create([
-            'locale' => 'ar',
-            'name' => 'سيدان',
-            'description' => 'سيارات سيدان لرحلات مريحة.',
-            'meta_title' => 'سيارات سيدان',
-            'meta_description' => 'استكشف سيارات السيدان.',
-            'image_alt' => 'صورة سيارة سيدان',
-        ]);
+        // Features مترجمة
+        $featuresData = [
+            'color' => ['en' => 'Color', 'ar' => 'اللون', 'values' => [
+                'Black' => 'أسود', 'White' => 'أبيض', 'Red' => 'أحمر', 'Blue' => 'أزرق', 'Gray' => 'رمادي', 'Silver' => 'فضي', 'Green' => 'أخضر'
+            ]],
+            'transmission' => ['en' => 'Transmission', 'ar' => 'نوع القير', 'values' => [
+                'Automatic' => 'أوتوماتيك', 'Manual' => 'يدوي'
+            ]],
+            'fuel' => ['en' => 'Fuel Type', 'ar' => 'نوع الوقود', 'values' => [
+                'Petrol' => 'بنزين', 'Diesel' => 'سولار', 'Electric' => 'كهرباء', 'Hybrid' => 'هايبرد'
+            ]],
+            'seats' => ['en' => 'Seats', 'ar' => 'عدد المقاعد', 'values' => [
+                '2' => 'مقعدين', '4' => '4 مقاعد', '5' => '5 مقاعد', '7' => '7 مقاعد'
+            ]],
+            'ac' => ['en' => 'Air Conditioning', 'ar' => 'مكيف', 'values' => [
+                'Yes' => 'نعم', 'No' => 'لا'
+            ]],
+        ];
 
-        // ربط السيارة بالتصنيف
-        DB::table('car_category')->insert([
-            'car_id' => $car->id,
-            'category_id' => $category->id,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $features = [];
+        foreach ($featuresData as $slug => $data) {
+            $feature = Feature::create([
+                'slug' => $slug,
+                'type' => 'select',
+                'is_required' => true,
+                'is_active' => true,
+            ]);
+            $feature->translations()->create(['locale' => 'en', 'name' => $data['en']]);
+            $feature->translations()->create(['locale' => 'ar', 'name' => $data['ar']]);
 
-        // إنشاء تاج
-        $tag = Tag::create([
-            'slug' => Str::slug('Luxury'),
-            'image' => 'luxury.jpg',
-            'is_active' => true,
-            'sort_order' => 0,
-        ]);
-        $tag->translations()->create([
-            'locale' => 'en',
-            'name' => 'Luxury',
-            'description' => 'Luxury cars for premium experience.',
-            'meta_title' => 'Luxury Cars',
-            'meta_description' => 'Explore luxury cars.',
-            'image_alt' => 'Luxury Car Image',
-        ]);
-        $tag->translations()->create([
-            'locale' => 'ar',
-            'name' => 'فاخر',
-            'description' => 'سيارات فاخرة لتجربة مميزة.',
-            'meta_title' => 'سيارات فاخرة',
-            'meta_description' => 'استكشف السيارات الفاخرة.',
-            'image_alt' => 'صورة سيارة فاخرة',
-        ]);
+            $values = [];
+            foreach ($data['values'] as $en => $ar) {
+                $val = FeatureValue::create([
+                    'feature_id' => $feature->id,
+                    'slug' => Str::slug($en),
+                    'is_active' => true,
+                ]);
+                $val->translations()->create(['locale' => 'en', 'value' => $en]);
+                $val->translations()->create(['locale' => 'ar', 'value' => $ar]);
+                $values[] = $val;
+            }
+            $features[$slug] = $values;
+        }
 
-        // ربط السيارة بالتاج
-        DB::table('car_tag')->insert([
-            'car_id' => $car->id,
-            'tag_id' => $tag->id,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        // Extra Options
+        $extraOptionsData = [
+            ['slug' => 'gps', 'name_en' => 'GPS', 'name_ar' => 'نظام تحديد المواقع', 'price' => 15.0],
+            ['slug' => 'child_seat', 'name_en' => 'Child Seat', 'name_ar' => 'كرسي أطفال', 'price' => 5.0],
+            ['slug' => 'insurance', 'name_en' => 'Insurance', 'name_ar' => 'تأمين', 'price' => 20.0],
+            ['slug' => 'wifi', 'name_en' => 'WiFi', 'name_ar' => 'انترنت', 'price' => 10.0],
+        ];
+        $extraOptions = [];
+        foreach ($extraOptionsData as $eo) {
+            $eoObj = ExtraOption::create([
+                'slug' => $eo['slug'],
+                'price' => $eo['price'],
+                'type' => 'checkbox',
+                'is_active' => true,
+                'sort_order' => 0
+            ]);
+            $eoObj->translations()->create(['locale' => 'en', 'name' => $eo['name_en']]);
+            $eoObj->translations()->create(['locale' => 'ar', 'name' => $eo['name_ar']]);
+            $extraOptions[] = $eoObj;
+        }
 
-        // إنشاء Option
-        $option = Option::create([
-            'slug' => Str::slug('Color'),
-            'image' => 'color.jpg',
-            'type' => 'select',
-            'is_active' => true,
-            'sort_order' => 0,
-        ]);
-        $option->translations()->create([
-            'locale' => 'en',
-            'name' => 'Color',
-            'description' => 'Choose the car color.',
-            'meta_title' => 'Car Color Option',
-            'meta_description' => 'Select your preferred car color.',
-            'image_alt' => 'Car Color Image',
-        ]);
-        $option->translations()->create([
-            'locale' => 'ar',
-            'name' => 'اللون',
-            'description' => 'اختر لون السيارة.',
-            'meta_title' => 'خيار لون السيارة',
-            'meta_description' => 'اختر لون السيارة المفضل لديك.',
-            'image_alt' => 'صورة لون السيارة',
-        ]);
+        // 50 سيارة مع ربط Categories وترجمات
+        for ($i = 1; $i <= 50; $i++) {
+            $carType = $carTypes[array_rand($carTypes)];
+            $car = Car::create([
+                'user_id' => $renter->id,
+                'car_type_id' => $carType->id,
+                'model' => $faker->year,
+                'color' => $faker->randomElement(['Black', 'White', 'Red', 'Blue', 'Gray']),
+                'main_image' => 'car' . $i . '.jpg',
+                'extra_images' => [$faker->imageUrl(), $faker->imageUrl()],
+                'engine_type' => $faker->randomElement(['V4', 'V6', 'V8']),
+                'slug' => Str::slug($carType->slug . '-' . $i),
+                'plate_type' => $faker->randomElement(['white', 'green']),
+                'rental_price' => $faker->randomFloat(2, 50, 200),
+                'availability_start' => now(),
+                'availability_end' => now()->addMonths(rand(1, 6)),
+                'latitude' => $faker->latitude(31.0364, 31.0644),
+                'longitude' => $faker->longitude(31.3782, 31.4140),
+                'long_term_guarantee' => $faker->boolean,
+                'pickup_delivery' => $faker->boolean,
+                'is_active' => true,
+                'sort_order' => 0,
+            ]);
 
-        // إنشاء Option Value
-        $optionValue = OptionValue::create([
-            'option_id' => $option->id,
-            'slug' => Str::slug('Black'),
-            'image' => 'black.jpg',
-            'is_active' => true,
-            'sort_order' => 0,
-        ]);
-        $optionValue->translations()->create([
-            'locale' => 'en',
-            'value' => 'Black',
-            'description' => 'Black color option.',
-            'meta_title' => 'Black Color',
-            'meta_description' => 'Black color for cars.',
-            'image_alt' => 'Black Color Image',
-        ]);
-        $optionValue->translations()->create([
-            'locale' => 'ar',
-            'value' => 'أسود',
-            'description' => 'خيار اللون الأسود.',
-            'meta_title' => 'اللون الأسود',
-            'meta_description' => 'اللون الأسود للسيارات.',
-            'image_alt' => 'صورة اللون الأسود',
-        ]);
+            // إضافة الترجمات مع locale
+            $car->translations()->create([
+                'locale' => 'en',
+                'name' => $faker->company . ' ' . $car->model,
+                'insurance_type' => 'Comprehensive',
+                'usage_nature' => 'Personal',
+                'description' => $faker->sentence,
+                'meta_title' => $faker->sentence(6),
+                'meta_description' => $faker->paragraph,
+                'image_alt' => $faker->sentence(3),
+            ]);
+            $car->translations()->create([
+                'locale' => 'ar',
+                'name' => 'سيارة ' . $i,
+                'insurance_type' => 'شامل',
+                'usage_nature' => 'شخصي',
+                'description' => $faker->sentence,
+                'meta_title' => 'سيارة ' . $i,
+                'meta_description' => 'وصف السيارة ' . $i,
+                'image_alt' => 'صورة سيارة ' . $i,
+            ]);
 
-        // ربط السيارة بالـ Option Value
-        DB::table('car_options')->insert([
-            'car_id' => $car->id,
-            'option_value_id' => $optionValue->id,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+            // ربط Categories عشوائية
+            $categoryIds = Category::pluck('id')->random(rand(1, 3))->toArray();
+            $car->categories()->sync($categoryIds);
 
-        // إنشاء Extra Option
-        $extraOption = ExtraOption::create([
-            'slug' => Str::slug('GPS'),
-            'image' => 'gps.jpg',
-            'price' => 10.00,
-            'type' => 'checkbox',
-            'is_active' => true,
-            'sort_order' => 0,
-        ]);
-        $extraOption->translations()->create([
-            'locale' => 'en',
-            'name' => 'GPS',
-            'description' => 'GPS navigation system.',
-            'meta_title' => 'GPS Navigation',
-            'meta_description' => 'Add GPS to your car rental.',
-            'image_alt' => 'GPS Image',
-        ]);
-        $extraOption->translations()->create([
-            'locale' => 'ar',
-            'name' => 'نظام تحديد المواقع',
-            'description' => 'نظام تحديد المواقع للملاحة.',
-            'meta_title' => 'نظام تحديد المواقع',
-            'meta_description' => 'أضف نظام تحديد المواقع لتأجير السيارة.',
-            'image_alt' => 'صورة نظام تحديد المواقع',
-        ]);
+            // ربط Features عشوائية
+            foreach ($features as $slug => $values) {
+                $val = $values[array_rand($values)];
+                DB::table('car_feature_values')->insert([
+                    'car_id' => $car->id,
+                    'feature_value_id' => $val->id,
+                    'created_at' => now(),
+                    'updated_at' => now()
+                ]);
+            }
 
-        // ربط السيارة بالـ Extra Option
-        DB::table('car_extra_options')->insert([
-            'car_id' => $car->id,
-            'extra_option_id' => $extraOption->id,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+            // Extra Options عشوائية
+            foreach ($extraOptions as $eo) {
+                if (rand(0, 1)) {
+                    DB::table('car_extra_options')->insert([
+                        'car_id' => $car->id,
+                        'extra_option_id' => $eo->id,
+                        'created_at' => now(),
+                        'updated_at' => now()
+                    ]);
+                }
+            }
 
-        // إنشاء Booking
-        $booking = Booking::create([
-            'car_id' => $car->id,
-            'customer_id' => $customer->id,
-            'start_date' => now(),
-            'end_date' => now()->addDays(3),
-            'total' => 300.00,
-            'extra_options' => ['gps' => 10.00],
-            'status' => 'pending',
-            'contact_number' => '0987654321',
-            'gender' => 'male',
-            'slug' => Str::slug('Booking 1'),
-            'is_active' => true,
-            'sort_order' => 0,
-        ]);
-
-        // إنشاء Review
-        $review = Review::create([
-            'car_id' => $car->id,
-            'user_id' => $customer->id,
-            'rating' => 5,
-            'comment' => 'Great car, very comfortable!',
-            'slug' => Str::slug('Review 1'),
-            'is_active' => true,
-            'sort_order' => 0,
-        ]);
+            // ريفيوهات
+            for ($r = 1; $r <= rand(1, 5); $r++) {
+                Review::create([
+                    'car_id' => $car->id,
+                    'user_id' => $customer->id,
+                    'rating' => rand(3, 5),
+                    'comment' => $faker->sentence,
+                    'slug' => Str::slug('7review-' . $i . '-' . $r),
+                    'is_active' => true,
+                    'sort_order' => 0,
+                ]);
+            }
+        }
     }
 }
+?>

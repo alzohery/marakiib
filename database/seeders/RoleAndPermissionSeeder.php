@@ -8,48 +8,81 @@ use Spatie\Permission\Models\Permission;
 
 class RoleAndPermissionSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public function run()
     {
-        // إعادة تعيين ذاكرة التخزين المؤقت للأدوار والتصاريح
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        // ---- 1. تعريف الأدوار ----
+        $roles = [
+            'admin',
+            'customer',
+            'private_renter',
+            'rental_office',
+        ];
 
-        // إنشاء التصاريح الأساسية
-        // يمكننا إضافة المزيد من التصاريح هنا في المستقبل
-        Permission::firstOrCreate(['name' => 'view dashboard']);
-        Permission::firstOrCreate(['name' => 'manage cars']);
-        Permission::firstOrCreate(['name' => 'manage bookings']);
-        Permission::firstOrCreate(['name' => 'chat with users']);
-        Permission::firstOrCreate(['name' => 'manage wallet']);
-        
-        // إنشاء الأدوار وتعيين التصاريح لها
-        $adminRole = Role::firstOrCreate(['name' => 'admin']);
-        $adminRole->givePermissionTo(Permission::all());
+        // إنشاء الأدوار الفريدة
+        foreach ($roles as $roleName) {
+            Role::findOrCreate($roleName);
+        }
 
-        $customerRole = Role::firstOrCreate(['name' => 'customer']);
-        $customerRole->givePermissionTo([
-            'view dashboard',
-            'chat with users',
-        ]);
-        
-        $privateRenterRole = Role::firstOrCreate(['name' => 'private_renter']);
-        $privateRenterRole->givePermissionTo([
-            'view dashboard',
-            'manage cars',
-            'manage bookings',
-            'chat with users',
-            'manage wallet',
-        ]);
+        // ---- 2. تعريف الصلاحيات ----
+        $permissions = [
+            'view-dashboard',
+            'manage-cars',
+            'manage cars', // أضيفت هنا كصلاحية منفصلة
+            'manage-bookings',
+            'chat-with-users',
+            'manage-wallet',
+            'manage-features',
+            'create-car',
+            'view-bookings',
+            'book-car',
+            'cancel-booking',
+            'confirm-booking',
+            'manage-offers',
+            'write-review',
+            'view-reviews',
+            'manage-favourites',
+        ];
 
-        $rentalOfficeRole = Role::firstOrCreate(['name' => 'rental_office']);
-        $rentalOfficeRole->givePermissionTo([
-            'view dashboard',
-            'manage cars',
-            'manage bookings',
-            'chat with users',
-            'manage wallet',
-        ]);
+        // إنشاء الصلاحيات الفريدة
+        foreach ($permissions as $permName) {
+            Permission::findOrCreate($permName);
+        }
+
+        // ---- 3. تعيين الصلاحيات لكل دور ----
+        $rolePermissions = [
+            'admin' => $permissions, // الأدمن عنده كل الصلاحيات
+            'customer' => [
+                'view-dashboard',
+                'book-car',
+                'view-reviews',
+                'write-review',
+            ],
+            'private_renter' => [
+                'view-dashboard',
+                'manage-cars',
+                'manage cars', // أضف هنا إذا كانت مطلوبة
+                'manage-bookings',
+                'view-bookings',
+                'confirm-booking',
+                'cancel-booking',
+            ],
+            'rental_office' => [
+                'view-dashboard',
+                'manage-cars',
+                'manage cars', // أضف هنا إذا كانت مطلوبة
+                'manage-bookings',
+                'view-bookings',
+                'confirm-booking',
+                'cancel-booking',
+                'manage-offers',
+            ],
+        ];
+
+        foreach ($rolePermissions as $roleName => $perms) {
+            $role = Role::findByName($roleName);
+            $role->syncPermissions($perms); // يربط الصلاحيات بدون تكرار
+        }
+
+        $this->command->info('تم إنشاء الأدوار والصلاحيات وربطها بنجاح!');
     }
 }

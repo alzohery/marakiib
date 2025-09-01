@@ -140,4 +140,24 @@ class UserRolePermissionController extends Controller
     {
         return response()->json($user->getAllPermissions()->pluck('name')); // Returns a collection of permission names
     }
+
+    public function getMainImageAttribute($value)
+    {
+        if (!$value) {
+            return asset('images/default.png'); // صورة افتراضية
+        }
+
+        // لو القيمة URL كامل (http/https)
+        if (filter_var($value, FILTER_VALIDATE_URL)) {
+            return $value;
+        }
+
+        // لو بتبدأ بـ /storage أو storage -> رجّعها كاملة
+        if (str_starts_with($value, '/storage') || str_starts_with($value, 'storage')) {
+            return asset(ltrim($value, '/'));
+        }
+
+        // غير كده يبقى مجرد اسم ملف
+        return asset('storage/cars/' . $value);
+    }
 }

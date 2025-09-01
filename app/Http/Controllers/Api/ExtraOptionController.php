@@ -14,7 +14,7 @@ class ExtraOptionController extends Controller
 
     public function index()
     {
-        $extraOptions = ExtraOption::withTranslations()->get();
+        $extraOptions = ExtraOption::with('translations')->get();
         return response()->json(['data' => $extraOptions], 200);
     }
 

@@ -12,18 +12,32 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
+    // ->withMiddleware(function (Middleware $middleware): void {
+    //     $middleware->alias([
+    //         'auth:sanctum' => \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+    //     ]);
+        
+    
+    //     $middleware->api(prepend: [
+    //         EnsureTokenIsValid::class,
+    //     ]);
+        
+    // })
+    ->withMiddleware(function (Illuminate\Foundation\Configuration\Middleware $middleware): void {
         $middleware->alias([
             'auth:sanctum' => \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+
+            // ✅ Spatie middlewares
+            'role' => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
         ]);
-        // $middleware->web(append: [
-        //     EnsureUserIsSubscribed::class,
-        // ]);
-    
+
         $middleware->api(prepend: [
-            EnsureTokenIsValid::class,
+            App\Http\Middleware\EnsureTokenIsValid::class,
         ]);
     })
+
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

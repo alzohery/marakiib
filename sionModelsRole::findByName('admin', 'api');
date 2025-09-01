@@ -1,0 +1,71 @@
+[90m= [39m[34;4mIlluminate\Database\Eloquent\Collection[39;24m {#6408
+    [34mall[39m: [
+      [34;4mSpatie\Permission\Models\Permission[39;24m {#6559
+        [34mid[39m: [35m1[39m,
+        [34mname[39m: "[32mview dashboard[39m",
+        [34mguard_name[39m: "[32mapi[39m",
+        [34mcreated_at[39m: "[32m2025-08-23 00:48:55[39m",
+        [34mupdated_at[39m: "[32m2025-08-23 00:48:55[39m",
+        [34mpivot[39m: [34;4mIlluminate\Database\Eloquent\Relations\Pivot[39;24m {#6556
+          [34mrole_id[39m: [35m1[39m,
+          [34mpermission_id[39m: [35m1[39m,
+        },
+      },
+      [34;4mSpatie\Permission\Models\Permission[39;24m {#6554
+        [34mid[39m: [35m2[39m,
+        [34mname[39m: "[32mmanage cars[39m",
+        [34mguard_name[39m: "[32mapi[39m",
+        [34mcreated_at[39m: "[32m2025-08-23 00:48:55[39m",
+        [34mupdated_at[39m: "[32m2025-08-23 00:48:55[39m",
+        [34mpivot[39m: [34;4mIlluminate\Database\Eloquent\Relations\Pivot[39;24m {#6558
+          [34mrole_id[39m: [35m1[39m,
+          [34mpermission_id[39m: [35m2[39m,
+        },
+      },
+      [34;4mSpatie\Permission\Models\Permission[39;24m {#6553
+        [34mid[39m: [35m3[39m,
+        [34mname[39m: "[32mmanage bookings[39m",
+        [34mguard_name[39m: "[32mapi[39m",
+        [34mcreated_at[39m: "[32m2025-08-23 00:48:55[39m",
+        [34mupdated_at[39m: "[32m2025-08-23 00:48:55[39m",
+        [34mpivot[39m: [34;4mIlluminate\Database\Eloquent\Relations\Pivot[39;24m {#6562
+          [34mrole_id[39m: [35m1[39m,
+          [34mpermission_id[39m: [35m3[39m,
+        },
+      },
+      [34;4mSpatie\Permission\Models\Permission[39;24m {#6552
+        [34mid[39m: [35m4[39m,
+        [34mname[39m: "[32mchat with users[39m",
+        [34mguard_name[39m: "[32mapi[39m",
+        [34mcreated_at[39m: "[32m2025-08-23 00:48:55[39m",
+        [34mupdated_at[39m: "[32m2025-08-23 00:48:55[39m",
+        [34mpivot[39m: [34;4mIlluminate\Database\Eloquent\Relations\Pivot[39;24m {#6560
+          [34mrole_id[39m: [35m1[39m,
+          [34mpermission_id[39m: [35m4[39m,
+        },
+      },
+      [34;4mSpatie\Permission\Models\Permission[39;24m {#6551
+        [34mid[39m: [35m5[39m,
+        [34mname[39m: "[32mmanage wallet[39m",
+        [34mguard_name[39m: "[32mapi[39m",
+        [34mcreated_at[39m: "[32m2025-08-23 00:48:55[39m",
+        [34mupdated_at[39m: "[32m2025-08-23 00:48:55[39m",
+        [34mpivot[39m: [34;4mIlluminate\Database\Eloquent\Relations\Pivot[39;24m {#6561
+          [34mrole_id[39m: [35m1[39m,
+          [34mpermission_id[39m: [35m5[39m,
+        },
+      },
+      [34;4mSpatie\Permission\Models\Permission[39;24m {#6550
+        [34mid[39m: [35m6[39m,
+        [34mname[39m: "[32mmanage-features[39m",
+        [34mguard_name[39m: "[32mapi[39m",
+        [34mcreated_at[39m: "[32m2025-08-27 15:03:14[39m",
+        [34mupdated_at[39m: "[32m2025-08-27 15:03:14[39m",
+        [34mpivot[39m: [34;4mIlluminate\Database\Eloquent\Relations\Pivot[39;24m {#6407
+          [34mrole_id[39m: [35m1[39m,
+          [34mpermission_id[39m: [35m6[39m,
+        },
+      },
+    ],
+  }
+

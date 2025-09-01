@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
+use App\Models\Wallet;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Mail\OtpMail;
@@ -16,13 +17,11 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    /**
-     * Register a new user and send OTP.
-     */
-    
+
+
     public function register(Request $request)
     {
-        // التحقق الأساسي للجميع
+        
         $commonRules = [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -35,7 +34,7 @@ class AuthController extends Controller
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ];
 
-        // قواعد التحقق الخاصة بكل دور
+        // قواعد خاصة بكل دور
         $roleSpecificRules = [
             'customer' => [
                 'driving_license_image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
@@ -51,31 +50,32 @@ class AuthController extends Controller
             ],
         ];
 
-        // تطبيق قواعد التحقق بناءً على الدور
+        // دمج القواعد حسب الدور
         $rulesToApply = $commonRules;
         if (isset($roleSpecificRules[$request->role])) {
             $rulesToApply = array_merge($commonRules, $roleSpecificRules[$request->role]);
         }
-        $request->validate($rulesToApply);
-        
-        // معالجة رفع الصور
-        $drivingLicensePath = null;
-        if ($request->hasFile('driving_license_image')) {
-            $drivingLicensePath = $request->file('driving_license_image')->store('licenses', 'public');
-        }
 
-        $carLicensePath = null;
-        if ($request->hasFile('car_license_image')) {
-            $carLicensePath = $request->file('car_license_image')->store('licenses', 'public');
-        }
+        $request->validate($rulesToApply);
+
+        // رفع الصور
+        $drivingLicensePath = $request->hasFile('driving_license_image')
+            ? $request->file('driving_license_image')->store('licenses', 'public')
+            : null;
+
+        $carLicensePath = $request->hasFile('car_license_image')
+            ? $request->file('car_license_image')->store('licenses', 'public')
+            : null;
+
         $imagePath = $request->hasFile('image')
             ? $request->file('image')->store('images', 'public')
             : null;
 
+        // إنشاء المستخدم
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => $request->password ? Hash::make($request->password) : null,
+            'password' => Hash::make($request->password),
             'role' => $request->role,
             'phone_number' => $request->phone_number,
             'address' => $request->address,
@@ -92,10 +92,43 @@ class AuthController extends Controller
             'sort_order' => 0,
         ]);
 
-        // تعيين الدور باستخدام Spatie Permissions
-        $user->assignRole($request->role);
+        // Guard ثابت
+        $guardName = 'api';
 
-        // إرسال OTP لتأكيد البريد الإلكتروني
+        // إنشاء أو إيجاد الـ Role
+        $role = \Spatie\Permission\Models\Role::firstOrCreate([
+            'name' => $request->role,
+            'guard_name' => $guardName,
+        ]);
+
+        // تحديد permissions حسب الدور
+        $permissionsByRole = [
+            'customer' => [], // العملاء عادي بدون صلاحيات خاصة
+            'private_renter' => ['manage-cars'], // يمكنه إدارة سياراته
+            'rental_office' => ['manage-cars', 'manage-offers'], // مثال لمكتب تأجير
+        ];
+
+        if(isset($permissionsByRole[$request->role]) && count($permissionsByRole[$request->role])) {
+            foreach ($permissionsByRole[$request->role] as $permName) {
+                $permission = \Spatie\Permission\Models\Permission::firstOrCreate([
+                    'name' => $permName,
+                    'guard_name' => $guardName,
+                ]);
+                $role->givePermissionTo($permission);
+            }
+        }
+
+        // إنشاء Wallet للمستخدم
+        Wallet::create([
+            'user_id' => $user->id,
+            'balance' => 0,
+            'slug' => Str::slug('wallet-' . $user->id . '-' . Str::random(6)),
+            'is_active' => true,
+        ]);
+        // تعيين الـ role للمستخدم
+        $user->assignRole($role);
+
+        // إرسال OTP لتأكيد البريد
         $this->sendOtp($user);
 
         return response()->json([
@@ -103,8 +136,6 @@ class AuthController extends Controller
             'user' => $user->only(['id', 'name', 'email', 'role', 'slug']),
         ], 201);
     }
-
-   
 
     public function login(Request $request)
     {
@@ -278,13 +309,7 @@ class AuthController extends Controller
         return response()->json(['message' => 'Logged out successfully.']);
     }
 
-    /**
-     * Get authenticated user details.
-     */
-    // public function user(Request $request)
-    // {
-    //     return response()->json($request->user());
-    // }
+    
     
     public function user(Request $request)
     {
@@ -296,6 +321,47 @@ class AuthController extends Controller
         return response()->json($request->user());
         
     }
+
+    public function update(Request $request)
+    {
+        $user = $request->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        $rules = [
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
+            'phone_number' => 'sometimes|string|max:20',
+            'address' => 'sometimes|string|max:255',
+            'latitude' => 'sometimes|numeric',
+            'longitude' => 'sometimes|numeric',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'password' => 'nullable|string|min:8|confirmed',
+        ];
+
+        $validated = $request->validate($rules);
+
+        // رفع صورة جديدة لو موجودة
+        if ($request->hasFile('image')) {
+            $validated['image'] = $request->file('image')->store('images', 'public');
+        }
+
+        // تشفير الباسورد لو اتبعت
+        if ($request->filled('password')) {
+            $validated['password'] = Hash::make($request->password);
+        }
+
+        // تحديث البيانات
+        $user->update($validated);
+
+        return response()->json([
+            'message' => 'Profile updated successfully.',
+            'user' => $user,
+        ]);
+    }
+
 
 
 

@@ -5,6 +5,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class CarTranslation extends Model
 {
-    protected $fillable = ['name', 'insurance_type', 'usage_nature', 'description', 'meta_title', 'meta_description', 'image_alt'];
+    protected $fillable = [
+        'locale', 'name', 'insurance_type', 'usage_nature', 
+        'description', 'meta_title', 'meta_description', 'image_alt'
+    ];
     public $timestamps = false;
 }

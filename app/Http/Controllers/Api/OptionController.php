@@ -15,7 +15,7 @@ class OptionController extends Controller
 
     public function index()
     {
-        $options = Option::withTranslations()->with('values')->get();
+        $options = Option::with('translations')->with('values')->get();
         return response()->json(['data' => $options], 200);
     }
 

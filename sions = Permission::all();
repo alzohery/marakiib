@@ -1,0 +1,47 @@
+[90m= [39m[34;4mIlluminate\Database\Eloquent\Collection[39;24m {#6384
+    [34mall[39m: [
+      [34;4mSpatie\Permission\Models\Role[39;24m {#6383
+        [34mid[39m: [35m1[39m,
+        [34mname[39m: "[32madmin[39m",
+        [34mguard_name[39m: "[32mapi[39m",
+        [34mcreated_at[39m: "[32m2025-08-27 21:45:15[39m",
+        [34mupdated_at[39m: "[32m2025-08-27 21:45:15[39m",
+      },
+      [34;4mSpatie\Permission\Models\Role[39;24m {#6386
+        [34mid[39m: [35m2[39m,
+        [34mname[39m: "[32mcustomer[39m",
+        [34mguard_name[39m: "[32mapi[39m",
+        [34mcreated_at[39m: "[32m2025-08-27 21:45:15[39m",
+        [34mupdated_at[39m: "[32m2025-08-27 21:45:15[39m",
+      },
+      [34;4mSpatie\Permission\Models\Role[39;24m {#6387
+        [34mid[39m: [35m3[39m,
+        [34mname[39m: "[32mprivate_renter[39m",
+        [34mguard_name[39m: "[32mapi[39m",
+        [34mcreated_at[39m: "[32m2025-08-27 21:45:15[39m",
+        [34mupdated_at[39m: "[32m2025-08-27 21:45:15[39m",
+      },
+      [34;4mSpatie\Permission\Models\Role[39;24m {#6388
+        [34mid[39m: [35m4[39m,
+        [34mname[39m: "[32mrental_office[39m",
+        [34mguard_name[39m: "[32mapi[39m",
+        [34mcreated_at[39m: "[32m2025-08-27 21:45:15[39m",
+        [34mupdated_at[39m: "[32m2025-08-27 21:45:15[39m",
+      },
+      [34;4mSpatie\Permission\Models\Role[39;24m {#6389
+        [34mid[39m: [35m5[39m,
+        [34mname[39m: "[32mprivate renter[39m",
+        [34mguard_name[39m: "[32mapi[39m",
+        [34mcreated_at[39m: "[32m2025-08-29 12:09:09[39m",
+        [34mupdated_at[39m: "[32m2025-08-29 12:09:09[39m",
+      },
+      [34;4mSpatie\Permission\Models\Role[39;24m {#6390
+        [34mid[39m: [35m6[39m,
+        [34mname[39m: "[32mrental office[39m",
+        [34mguard_name[39m: "[32mapi[39m",
+        [34mcreated_at[39m: "[32m2025-08-29 12:09:10[39m",
+        [34mupdated_at[39m: "[32m2025-08-29 12:09:10[39m",
+      },
+    ],
+  }
+

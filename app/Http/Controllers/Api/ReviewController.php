@@ -1,73 +1,140 @@
 <?php
+
 namespace App\Http\Controllers\Api;
+
 use App\Http\Controllers\Controller;
 use App\Models\Review;
+use App\Models\Booking;
 use App\Models\Car;
 use Illuminate\Http\Request;
-use Spatie\Permission\Middlewares\PermissionMiddleware;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
 
 class ReviewController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth:sanctum', PermissionMiddleware::class . ':manage-reviews'])->except(['index', 'show']);
+        $this->middleware('auth:sanctum');
+        $this->middleware('permission:write-review', ['only' => ['store']]);
+        $this->middleware('permission:view-reviews', ['only' => ['index']]);
     }
 
-    public function index()
+    public function index(Request $request, $carId)
     {
-        $reviews = Review::with(['car', 'user'])->get();
-        return response()->json(['data' => $reviews], 200);
+        $locale = $request->header('Accept-Language', 'en');
+
+        $car = Car::findOrFail($carId);
+
+        $reviews = Review::where('car_id', $carId)
+            ->where('is_active', true)
+            ->with([
+                'customer:id,name,avatar',
+                'car.translations' => fn($q) => $q->where('locale', $locale)
+            ])
+            ->get();
+
+        return \App\Http\Resources\ReviewResource::collection($reviews);
     }
 
-    public function store(Request $request)
+
+    public function store(Request $request, $carId)
     {
         $validated = $request->validate([
-            'car_id' => 'required|exists:cars,id',
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string',
-            'slug' => 'required|string|unique:reviews,slug',
+            'rating' => 'required|integer|between:1,5',
+            'comment' => 'nullable|string|max:1000',
         ]);
 
-        $car = Car::findOrFail($validated['car_id']);
-        if ($car->user_id === auth()->id()) {
-            return response()->json(['message' => 'You cannot review your own car'], 403);
+        $car = Car::findOrFail($carId);
+
+        $hasCompletedBooking = Booking::where('customer_id', Auth::id())
+            ->where('car_id', $carId)
+            ->where('status', 'completed')
+            ->exists();
+
+        if (!$hasCompletedBooking) {
+            return response()->json(['message' => 'You can only review a car after completing a booking.'], 403);
+        }
+
+        $existingReview = Review::where('user_id', Auth::id())
+            ->where('car_id', $carId)
+            ->exists();
+
+        if ($existingReview) {
+            return response()->json(['message' => 'You have already reviewed this car.'], 422);
         }
 
         $review = Review::create([
-            'car_id' => $validated['car_id'],
-            'user_id' => auth()->id(),
+            'car_id' => $carId,
+            'user_id' => Auth::id(),
             'rating' => $validated['rating'],
             'comment' => $validated['comment'],
-            'slug' => $validated['slug'],
+            'slug' => Str::slug('review-' . $carId . '-' . Auth::id() . '-' . now()->timestamp),
             'is_active' => true,
-            'sort_order' => 0,
         ]);
 
-        return response()->json(['data' => $review->load(['car', 'user'])], 201);
+        return response()->json([
+            'message' => 'Review created successfully',
+            'data' => $this->formatReview($review)
+        ], 201);
     }
 
-    public function show(Review $review)
+    public function update(Request $request, $reviewId)
     {
-        return response()->json(['data' => $review->load(['car', 'user'])], 200);
-    }
-
-    public function update(Request $request, Review $review)
-    {
-        $this->authorize('update', $review);
         $validated = $request->validate([
-            'rating' => 'integer|min:1|max:5',
-            'comment' => 'nullable|string',
-            'slug' => 'string|unique:reviews,slug,' . $review->id,
+            'rating' => 'required|integer|between:1,5',
+            'comment' => 'nullable|string|max:1000',
         ]);
 
-        $review->update($validated);
-        return response()->json(['data' => $review->load(['car', 'user'])], 200);
+        $review = Review::where('id', $reviewId)
+            ->where('user_id', Auth::id()) // عشان مايعدلش على مراجعة غيره
+            ->firstOrFail();
+
+        $review->update([
+            'rating' => $validated['rating'],
+            'comment' => $validated['comment'],
+        ]);
+
+        return response()->json([
+            'message' => 'Review updated successfully',
+            'data' => $this->formatReview($review)
+        ]);
     }
 
-    public function destroy(Review $review)
+    private function formatReview($review)
     {
-        $this->authorize('delete', $review);
-        $review->delete();
-        return response()->json(['message' => 'Review deleted successfully'], 200);
+        return [
+            'id' => $review->id,
+            'car_id' => $review->car_id,
+            'user' => [
+                'id' => $review->user->id,
+                'name' => $review->user->name,
+                'avatar' => $review->user->avatar,
+            ],
+            'rating' => $review->rating,
+            'comment' => $review->comment,
+            'created_at' => $review->created_at,
+            'updated_at' => $review->updated_at,
+        ];
     }
+
+
+     
+    
+
+    public function destroy($reviewId)
+    {
+        $review = Review::where('id', $reviewId)
+            ->where('user_id', Auth::id())
+            ->firstOrFail();
+
+        $review->delete();
+
+        return response()->json([
+            'message' => 'Review deleted successfully'
+        ]);
+    }
+
+
+
 }

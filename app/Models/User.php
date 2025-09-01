@@ -19,7 +19,8 @@ class User extends Authenticatable implements MustVerifyEmail // أضف MustVeri
      *
      * @var array<int, string>
      */
-    
+    protected $guard_name = 'api';
+
     protected $fillable = [
   
         'name', 'email', 'password', 'role', 'phone_number', 'address', 'latitude', 'longitude',
@@ -78,10 +79,7 @@ class User extends Authenticatable implements MustVerifyEmail // أضف MustVeri
         return $this->hasMany(Review::class);
     }
 
-    public function favorites()
-    {
-        return $this->hasMany(Favorite::class);
-    }
+    
 
     public function sentMessages()
     {
@@ -92,5 +90,11 @@ class User extends Authenticatable implements MustVerifyEmail // أضف MustVeri
     {
         return $this->hasMany(Message::class, 'receiver_id');
     }
+   
+    public function favorites()
+    {
+        return $this->belongsToMany(Car::class, 'favorites', 'user_id', 'car_id')->withTimestamps();
+    }
+
 
 }
