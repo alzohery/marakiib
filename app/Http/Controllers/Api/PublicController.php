@@ -574,8 +574,8 @@ public function getCarDetails(Request $request, $id)
 
     // حساب إذا السيارة مفضلة فقط لو المستخدم مسجل
     $isFavourite = auth()->check() && auth()->user()->hasRole('customer')
-        ? $car->favourites->contains('user_id', auth()->id())
-        : false;
+    ? $car->favourites?->contains('user_id', auth()->id())
+    : false;
 
     return response()->json([
         'data' => [

@@ -90,43 +90,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('search', [CustomerController::class, 'advancedSearch']);
         Route::get('cars/{car}', [CustomerController::class, 'getCarDetails']);
 
-        // Chat
-        // Route::post('chat/start', [CustomerController::class, 'startConversation']);
-        // Route::get('chats', [CustomerController::class, 'getConversations']);
-        // Route::get('chat/{conversation}', [CustomerController::class, 'getConversationMessages']);
-        // Route::post('chat/{conversation}', [CustomerController::class, 'sendMessage']);
-        // Route::get('chat/all', [CustomerController::class, 'getUserChats']);
-        // Route::post('chat/{conversation}/read', [CustomerController::class, 'markConversationAsRead']);
-
-        // ---------------- CHAT ----------------
-
-        // // بدء محادثة جديدة مع مؤجر
-        // Route::post('chat/start', [CustomerController::class, 'startConversation']);
-
-        // // جلب كل المحادثات للمستخدم
-        // Route::get('chats', [CustomerController::class, 'getUserChats']);
-
-        // // جلب رسائل محادثة محددة
-        // Route::get('chat/{id}', [CustomerController::class, 'getConversationMessages']);
-
-        // // إرسال رسالة جديدة في محادثة
-        // Route::post('chat/{id}', [CustomerController::class, 'sendMessage']);
-
-        // // تعليم المحادثة كمقروءة
-        // Route::post('chat/{id}/read', [CustomerController::class, 'markConversationAsRead']);
-
         // Favorites
         Route::post('favorites', [CustomerController::class, 'addFavorite']);
-        Route::delete('favorites/{favorite}', [CustomerController::class, 'removeFavorite']);
-
-        // Reviews
-        // Route::apiResource('reviews', ReviewController::class);
-
-
-        
-
-
-    
+        Route::delete('favorites/{favorite}', [CustomerController::class, 'removeFavorite']);    
 
     });
 
@@ -141,9 +107,19 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Cars Management for Users with Permission
+    // Route::middleware('permission:manage-cars')->group(function() {
+    //     // Route::apiResource('cars', CarController::class);
+    //     Route::get('/my-cars', [CarController::class, 'myCars']);
+    //     Route::post('/cars/{car}', [CarController::class, 'update']);
+    //     Route::post('/cars', [CarController::class, 'store']);
+    //     Route::delete('/cars', [CarController::class, 'destroy']);
+    // });
     Route::middleware('permission:manage-cars')->group(function() {
         Route::apiResource('cars', CarController::class);
         Route::get('/my-cars', [CarController::class, 'myCars']);
+        Route::post('/cars', [CarController::class, 'store']);
+        Route::delete('/cars/{car}', [CarController::class, 'destroy']);
+        Route::post('/cars/{car}', [CarController::class, 'update']);
     });
 
 

@@ -5,12 +5,14 @@ use Astrotomic\Translatable\Translatable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Laravel\Scout\Searchable;
-
+use Illuminate\Support\Str;
 class Car extends Model
 {
     use Translatable, SoftDeletes, Searchable;
     
     public $translatedAttributes = ['name', 'insurance_type', 'usage_nature', 'description', 'meta_title', 'meta_description', 'image_alt'];
+
+
     // protected $fillable = [
     //     'user_id', 'car_type_id', 'model', 'color', 'main_image', 'extra_images',
     //     'engine_type', 'slug', 'plate_type', 'rental_price', 'availability_start',
@@ -18,13 +20,12 @@ class Car extends Model
     // ];
     protected $fillable = [
         'user_id',
-        'car_type_id',
-        'model',
-
-        'color',
+        // 'car_type_id',
+        // 'model',
+        // 'color',
         'main_image',
         'extra_images',
-        'engine_type',
+        // 'engine_type',
         'slug',
         'plate_type',
         'rental_price',
@@ -64,13 +65,13 @@ class Car extends Model
 
     public function favourites()
     {
-        return $this->belongsTo(Favorite::class);
+        return $this->hasMany(Favorite::class);
     }
 
-    public function carType()
-    {
-        return $this->belongsTo(CarType::class);
-    }
+    // public function carType()
+    // {
+    //     return $this->belongsTo(CarType::class);
+    // }
 
     public function reviews()
 {
@@ -184,20 +185,61 @@ public function getMainImageAttribute($value)
 }
 
 
+public function getExtraImagesAttribute($value)
+{
+    if (!$value) {
+        return [];
+    }
 
+    $images = is_array($value) ? $value : json_decode($value, true);
 
-    public function getExtraImagesUrlsAttribute()
-    {
-        if (!$this->extra_images || !is_array($this->extra_images)) {
-            return [];
+    return collect($images)->map(function ($img) {
+        if (filter_var($img, FILTER_VALIDATE_URL)) {
+            return $img;
         }
+        return asset(ltrim($img, '/'));
+    })->toArray();
+}
 
-        return collect($this->extra_images)->map(function ($img) {
-            if (filter_var($img, FILTER_VALIDATE_URL)) {
-                return $img;
+
+
+    // public function getExtraImagesUrlsAttribute()
+    // {
+    //     if (!$this->extra_images || !is_array($this->extra_images)) {
+    //         return [];
+    //     }
+
+    //     return collect($this->extra_images)->map(function ($img) {
+    //         if (filter_var($img, FILTER_VALIDATE_URL)) {
+    //             return $img;
+    //         }
+    //         return asset('storage/cars/' . $img);
+    //     })->toArray();
+    // }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            // 🟢 slug تلقائي لو مش متسجل
+            if (empty($model->slug)) {
+                $baseSlug = Str::slug($model->name ?? 'car-' . Str::uuid());
+                $slug = $baseSlug;
+                $count = 1;
+
+                while (static::where('slug', $slug)->exists()) {
+                    $slug = $baseSlug . '-' . $count++;
+                }
+
+                $model->slug = $slug;
             }
-            return asset('storage/cars/' . $img);
-        })->toArray();
+
+            // 🟢 ترتيب افتراضي sort_order لو مش متحدد
+            if (empty($model->sort_order)) {
+                $model->sort_order = static::max('sort_order') + 1;
+            }
+        });
     }
 
 

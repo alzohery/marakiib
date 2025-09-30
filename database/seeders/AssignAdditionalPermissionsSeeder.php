@@ -19,7 +19,7 @@ class AssignAdditionalPermissionsSeeder extends Seeder
                 'manage-wallet',
             ],
             'customer' => [
-                
+                'manage-wallet',
                'view-bookings',
                'cancel-booking',
                'manage-favourites', // أضفتها هنا

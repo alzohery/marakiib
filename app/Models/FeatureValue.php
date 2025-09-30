@@ -1,46 +1,62 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Str;
-class FeatureValue extends Model
+use Astrotomic\Translatable\Translatable;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
+
+class FeatureValue extends Model implements TranslatableContract
 {
-    protected $fillable = ['feature_id', 'slug', 'image', 'is_active', 'sort_order'];
+    use Translatable;
 
-    public function translations()
-    {
-        return $this->hasMany(FeatureValueTranslation::class);
-    }
+    public $translatedAttributes = ['value', 'description'];
 
-    public function feature()
+    protected $fillable = [
+        'feature_id',
+        'slug',
+        'image',
+        'is_active',
+        'sort_order',
+    ];
+
+    // 🔹 علاقة مع الـ Feature
+    public function feature(): BelongsTo
     {
         return $this->belongsTo(Feature::class);
     }
 
-    public function cars()
+    // 🔹 علاقة مع الـ Cars (Pivot table: car_feature_values)
+    public function cars(): BelongsToMany
     {
         return $this->belongsToMany(Car::class, 'car_feature_values');
     }
 
-protected static function boot()
-{
-    parent::boot();
+    // 🔹 إنشاء slug تلقائي
+    protected static function boot()
+    {
+        parent::boot();
 
-    static::creating(function ($model) {
-        if (empty($model->slug)) {
-            $baseSlug = \Str::slug(request('values.*.value.en', 'value-' . uniqid()));
-            $slug = $baseSlug;
-            $count = 1;
+        static::creating(function ($model) {
+            if (empty($model->slug)) {
+                $defaultLocale = config('app.locale');
 
-            while (static::where('slug', $slug)->exists()) {
-                $slug = $baseSlug . '-' . $count++;
+                $baseSlug = Str::slug(
+                    $model->translateOrNew($defaultLocale)->value ?? 'value-' . uniqid()
+                );
+
+                $slug = $baseSlug;
+                $count = 1;
+
+                while (static::where('slug', $slug)->exists()) {
+                    $slug = $baseSlug . '-' . $count++;
+                }
+
+                $model->slug = $slug;
             }
-
-            $model->slug = $slug;
-        }
-    });
-}
-
-
-
+        });
+    }
 }

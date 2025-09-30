@@ -1,0 +1,21 @@
+{
+    "Total Bookings": "إجمالي الحجوزات",
+    "Total bookings in the system": "إجمالي الحجوزات في النظام",
+    "Favorites": "المفضلة",
+    "Cars added to favorites": "السيارات المضافة إلى المفضلة",
+    "Average Rating": "متوسط التقييم",
+    "Average rating of cars": "متوسط تقييم السيارات",
+    "Bookings by Status": "الحجوزات حسب الحالة",
+    "Pending Bookings": "الحجوزات المعلقة",
+    "Completed Bookings": "الحجوزات المكتملة",
+    "Latest Bookings": "آخر الحجوزات",
+    "Customer": "العميل",
+    "Car": "السيارة",
+    "Status": "الحالة",
+    "Created At": "تاريخ الإنشاء",
+    "Pending": "معلق",
+    "Completed": "مكتمل",
+    "Cancelled": "ملغي",
+    "Rejected": "مرفوض",
+    "View": "عرض"
+}

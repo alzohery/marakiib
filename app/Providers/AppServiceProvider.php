@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+// use Filament\Facades\Filament;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -17,8 +18,13 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
-    {
-        //
-    }
+
+    // public function boot(): void
+    // {
+    //     Filament::serving(function () {
+    //         auth()->shouldUse('web'); // إجبار Filament على استخدام guard web
+    //     });
+    // }
+
+
 }

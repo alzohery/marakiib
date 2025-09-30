@@ -56,4 +56,23 @@ class Message extends Model
     {
         return $this->belongsTo(User::class, 'receiver_id');
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            if (empty($model->slug)) {
+                $baseSlug = Str::slug('msg-' . Str::uuid());
+                $slug = $baseSlug;
+                $count = 1;
+
+                while (static::where('slug', $slug)->exists()) {
+                    $slug = $baseSlug . '-' . $count++;
+                }
+
+                $model->slug = $slug;
+            }
+        });
+    }
 }

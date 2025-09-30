@@ -2,47 +2,48 @@
 
 namespace App\Models;
 
+use Astrotomic\Translatable\Translatable;
+use Astrotomic\Translatable\Contracts\Translatable as TranslatableContract;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
-class Feature extends Model
+
+class Feature extends Model implements TranslatableContract
 {
-    protected $fillable = ['slug', 'type', 'image', 'is_required', 'is_active', 'sort_order'];
+    use Translatable;
 
-    
+    public $translatedAttributes = ['name', 'description'];
 
-   
-    public function translations()
-    {
-        return $this->hasMany(FeatureTranslation::class);
-    }
+    protected $fillable = [
+        'slug',
+        'type',
+        'image',
+        'is_required',
+        'is_active',
+        'sort_order',
+    ];
 
-    public function values()
+    public function featureValues(): HasMany
     {
         return $this->hasMany(FeatureValue::class);
     }
 
-    
-
     protected static function boot()
-{
-    parent::boot();
+    {
+        parent::boot();
 
-    static::creating(function ($model) {
-        if (empty($model->slug)) {
-            // خُد الاسم من الريكوست (بالإنجليزي مثلاً)
-            $baseSlug = \Str::slug(request('name.en', 'feature-' . uniqid()));
-            $slug = $baseSlug;
-            $count = 1;
+        static::creating(function ($model) {
+            if (empty($model->slug)) {
+                $baseSlug = Str::slug(request('en.name', 'feature-' . uniqid()));
+                $slug = $baseSlug;
+                $count = 1;
 
-            while (static::where('slug', $slug)->exists()) {
-                $slug = $baseSlug . '-' . $count++;
+                while (static::where('slug', $slug)->exists()) {
+                    $slug = $baseSlug . '-' . $count++;
+                }
+
+                $model->slug = $slug;
             }
-
-            $model->slug = $slug;
-        }
-    });
-}
-
-
-
+        });
+    }
 }
