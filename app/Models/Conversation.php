@@ -44,10 +44,16 @@ class Conversation extends Model
             ->count();
     }
 
-    // public function messages()
-    // {
-    //     return $this->hasMany(Message::class);
-    // }
+    public function sender()
+    {
+        return $this->belongsTo(User::class, 'user1_id');
+    }
+
+    public function receiver()
+    {
+        return $this->belongsTo(User::class, 'user2_id');
+    }
+
 
     public function getMainImageAttribute($value)
     {

@@ -46,6 +46,7 @@
                              'completed' => 'success',
                              'cancelled' => 'danger',
                              'rejected' => 'danger',
+                             default => 'secondary',
                          }),
                      Tables\Columns\TextColumn::make('created_at')
                          ->label(__('Created At'))

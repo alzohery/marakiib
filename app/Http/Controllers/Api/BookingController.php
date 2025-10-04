@@ -1,148 +1,310 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+  namespace App\Http\Controllers\Api;
 
-use App\Http\Controllers\Controller;
-use App\Models\Booking;
-use App\Models\Car;
-use App\Models\ExtraOption;
-use App\Models\Wallet;
-use App\Models\Transaction;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
+  use App\Http\Controllers\Controller;
+  use App\Models\Booking;
+  use App\Models\Car;
+  use App\Models\ExtraOption;
+  use App\Models\Wallet;
+  use App\Models\Transaction;
+  use Illuminate\Http\Request;
+  use Illuminate\Support\Facades\Auth;
+  use Illuminate\Support\Facades\DB;
+  use Illuminate\Support\Str;
 
-class BookingController extends Controller
-{
+  class BookingController extends Controller
+  {
     public function __construct()
     {
         $this->middleware('auth:sanctum');
-        $this->middleware('permission:view-bookings', ['only' => ['index', 'show']]);
-        $this->middleware('permission:book-car', ['only' => ['store']]);
-        $this->middleware('permission:cancel-booking', ['only' => ['cancel']]);
-        $this->middleware('permission:confirm-booking', ['only' => ['confirm', 'reject']]);
+        $this->middleware('permission:view-bookings', ['guard' => 'api', 'only' => ['index', 'show']]);
+        $this->middleware('permission:book-car', ['guard' => 'api', 'only' => ['store']]);
+        $this->middleware('permission:cancel-booking', ['guard' => 'api', 'only' => ['cancel']]);
+        $this->middleware('permission:confirm-booking', ['guard' => 'api', 'only' => ['confirm', 'reject']]);
+
     }
 
+      /**
+     * إنشاء حجز جديد
+     */
+    // public function store(Request $request)
+    // {
+    //     $validated = $request->validate([
+    //         'car_id' => 'required|exists:cars,id',
+    //         'start_date' => 'required|date|after_or_equal:today',
+    //         'end_date' => 'required|date|after:start_date',
+    //         'contact_number' => 'required|string|max:255',
+    //         // 'gender' => 'required|in:male,female',
+    //     ]);
 
+    //     try {
+    //         $car = Car::findOrFail($validated['car_id']);
 
+    //         if ($car->availability_start > $validated['start_date'] || $car->availability_end < $validated['end_date']) {
+    //             return response()->json(['message' => 'Car is not available for the selected dates'], 422);
+    //         }
+
+    //         // ✅ استبعاد الحجوزات الملغية
+    //         $existingBooking = Booking::where('car_id', $validated['car_id'])
+    //             ->where('status', '!=', 'cancelled')
+    //             ->where(function ($query) use ($validated) {
+    //                 $query->whereBetween('start_date', [$validated['start_date'], $validated['end_date']])
+    //                     ->orWhereBetween('end_date', [$validated['start_date'], $validated['end_date']])
+    //                     ->orWhere(fn($q) => $q->where('start_date', '<=', $validated['start_date'])
+    //                                         ->where('end_date', '>=', $validated['end_date']));
+    //             })->exists();
+
+    //         if ($existingBooking) {
+    //             return response()->json(['message' => 'Car is already booked for the selected dates'], 422);
+    //         }
+
+    //         // ✅ حساب السعر الأساسي (بدون عمولة)
+    //         $basePrice = $this->calculateTotalPrice(
+    //             $car,
+    //             $validated['start_date'],
+    //             $validated['end_date'],
+    //             []
+    //         );
+
+    //         $wallet = Wallet::where('user_id', Auth::id())->first();
+    //         if (!$wallet || $wallet->balance < $basePrice) {
+    //             return response()->json(['message' => 'Insufficient wallet balance'], 422);
+    //         }
+
+    //         $slug = \Str::slug($car->slug . '-' . now()->timestamp . '-' . Auth::id());
+
+    //         return DB::transaction(function () use ($validated, $car, $basePrice, $slug, $wallet) {
+    //             // إنشاء الحجز بالسعر الأساسي فقط
+    //             $booking = Booking::create([
+    //                 'customer_id' => Auth::id(),
+    //                 'car_id' => $validated['car_id'],
+    //                 'start_date' => $validated['start_date'],
+    //                 'end_date' => $validated['end_date'],
+    //                 'total' => $basePrice, // هنا بدون عمولة
+    //                 'commission_amount' => 0, // هيتحدث لاحقاً
+    //                 'status' => 'pending',
+    //                 'contact_number' => $validated['contact_number'],
+    //                 // 'gender' => $validated['gender'],
+    //                 'slug' => $slug,
+    //                 'is_active' => true,
+    //             ]);
+
+    //             // ✅ حساب العمولة وتحديث total
+    //             $booking->applyCommissions();
+
+    //             // لازم نجيب الـ total بعد التحديث
+    //             $finalTotal = $booking->total;
+
+    //             // خصم الرصيد
+    //             $wallet->update(['balance' => $wallet->balance - $finalTotal]);
+
+    //             // إنشاء معاملة
+    //             Transaction::create([
+    //                 'wallet_id' => $wallet->id,
+    //                 'amount' => $finalTotal,
+    //                 'type' => 'payment',
+    //                 'status' => 'completed',
+    //                 'slug' => \Str::slug('payment-booking-' . $booking->id . '-' . now()->timestamp),
+    //                 'is_active' => true,
+    //             ]);
+
+    //             return response()->json(['data' => $booking], 201);
+    //         });
+
+    //     } catch (\Exception $e) {
+    //         \Log::error('Booking creation failed', [
+    //             'customer_id' => Auth::id(),
+    //             'input' => $request->all(),
+    //             'error' => $e->getMessage(),
+    //         ]);
+
+    //         return response()->json([
+    //             'message' => 'Failed to create booking',
+    //             'error' => $e->getMessage()
+    //         ], 500);
+    //     }
+    // }
     public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'car_id' => 'required|exists:cars,id',
-            'start_date' => 'required|date|after_or_equal:today',
-            'end_date' => 'required|date|after:start_date',
-            'contact_number' => 'required|string|max:255',
-            // 'gender' => 'required|in:male,female',
+{
+    $validated = $request->validate([
+        'car_id' => 'required|exists:cars,id',
+        'start_date' => 'required|date|after_or_equal:today',
+        'end_date' => 'required|date|after:start_date',
+        'contact_number' => 'required|string|max:255',
+    ]);
+
+    try {
+        $car = Car::findOrFail($validated['car_id']);
+
+        // ✅ تحقق من التوافر
+        if ($car->availability_start > $validated['start_date'] || $car->availability_end < $validated['end_date']) {
+            return response()->json(['message' => 'Car is not available for the selected dates'], 422);
+        }
+
+        // ✅ استبعاد الحجوزات الملغية
+        $existingBooking = Booking::where('car_id', $validated['car_id'])
+            ->where('status', '!=', 'cancelled')
+            ->where(function ($query) use ($validated) {
+                $query->whereBetween('start_date', [$validated['start_date'], $validated['end_date']])
+                    ->orWhereBetween('end_date', [$validated['start_date'], $validated['end_date']])
+                    ->orWhere(fn($q) => $q->where('start_date', '<=', $validated['start_date'])
+                                        ->where('end_date', '>=', $validated['end_date']));
+            })->exists();
+
+        if ($existingBooking) {
+            return response()->json(['message' => 'Car is already booked for the selected dates'], 422);
+        }
+
+        // ✅ حساب السعر الأساسي (بدون عمولة)
+        $basePrice = $this->calculateTotalPrice(
+            $car,
+            $validated['start_date'],
+            $validated['end_date'],
+            []
+        );
+
+        $wallet = Wallet::where('user_id', Auth::id())->first();
+        if (!$wallet || $wallet->balance < $basePrice) {
+            return response()->json(['message' => 'Insufficient wallet balance'], 422);
+        }
+
+        $slug = \Str::slug($car->slug . '-' . now()->timestamp . '-' . Auth::id());
+
+        return DB::transaction(function () use ($validated, $car, $basePrice, $slug, $wallet) {
+            // ✅ إنشاء الحجز بالسعر الأساسي
+            $booking = Booking::create([
+                'customer_id' => Auth::id(),
+                'car_id' => $validated['car_id'],
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'base_price' => $basePrice, // السعر الأساسي
+                'total' => $basePrice,      // مبدئيًا = base_price
+                'commission_amount' => 0,
+                'status' => 'pending',
+                'contact_number' => $validated['contact_number'],
+                'slug' => $slug,
+                'is_active' => true,
+            ]);
+
+            // ✅ حساب العمولة وتحديث total
+            $booking->applyCommissions();
+
+            // خصم من المحفظة على أساس الـ total بعد العمولة
+            $wallet->update(['balance' => $wallet->balance - $booking->total]);
+
+            // ✅ إنشاء معاملة
+            Transaction::create([
+                'wallet_id' => $wallet->id,
+                'amount' => $booking->total,
+                'type' => 'payment',
+                'status' => 'completed',
+                'slug' => \Str::slug('payment-booking-' . $booking->id . '-' . now()->timestamp),
+                'is_active' => true,
+            ]);
+
+            return response()->json(['data' => $booking], 201);
+        });
+
+    } catch (\Exception $e) {
+        \Log::error('Booking creation failed', [
+            'customer_id' => Auth::id(),
+            'input' => $request->all(),
+            'error' => $e->getMessage(),
         ]);
 
-        try {
-            $car = Car::findOrFail($validated['car_id']);
-            if ($car->availability_start > $validated['start_date'] || $car->availability_end < $validated['end_date']) {
-                return response()->json(['message' => 'Car is not available for the selected dates'], 422);
-            }
-
-            // استبعاد الحجزات الملغية
-            $existingBooking = Booking::where('car_id', $validated['car_id'])
-                ->where('status', '!=', 'cancelled')
-                ->where(function ($query) use ($validated) {
-                    $query->whereBetween('start_date', [$validated['start_date'], $validated['end_date']])
-                        ->orWhereBetween('end_date', [$validated['start_date'], $validated['end_date']])
-                        ->orWhere(fn($q) => $q->where('start_date', '<=', $validated['start_date'])
-                                                ->where('end_date', '>=', $validated['end_date']));
-                })->exists();
-
-            if ($existingBooking) {
-                return response()->json(['message' => 'Car is already booked for the selected dates'], 422);
-            }
-
-            $totalPrice = $this->calculateTotalPrice($car, $validated['start_date'], $validated['end_date'], []);
-
-            $wallet = Wallet::where('user_id', Auth::id())->first();
-            if (!$wallet || $wallet->balance < $totalPrice) {
-                return response()->json(['message' => 'Insufficient wallet balance'], 422);
-            }
-
-            $slug = \Str::slug($car->slug . '-' . now()->timestamp . '-' . Auth::id());
-
-            return DB::transaction(function () use ($validated, $car, $totalPrice, $slug, $wallet) {
-                $booking = Booking::create([
-                    'customer_id' => Auth::id(),
-                    'car_id' => $validated['car_id'],
-                    'start_date' => $validated['start_date'],
-                    'end_date' => $validated['end_date'],
-                    'total' => $totalPrice,
-                    'status' => 'pending',
-                    'contact_number' => $validated['contact_number'],
-                    // 'gender' => $validated['gender'],
-                    'slug' => $slug,
-                    'is_active' => true,
-                ]);
-
-                $wallet->update(['balance' => $wallet->balance - $totalPrice]);
-
-                Transaction::create([
-                    'wallet_id' => $wallet->id,
-                    'amount' => $totalPrice,
-                    'type' => 'payment',
-                    'status' => 'completed',
-                    'slug' => \Str::slug('payment-booking-' . $booking->id . '-' . now()->timestamp),
-                    'is_active' => true,
-                ]);
-
-                return response()->json(['data' => $booking], 201);
-            });
-
-        } catch (\Exception $e) {
-            \Log::error('Booking creation failed', [
-                'customer_id' => Auth::id(),
-                'input' => $request->all(),
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json(['message' => 'Failed to create booking', 'error' => $e->getMessage()], 500);
-        }
+        return response()->json([
+            'message' => 'Failed to create booking',
+            'error' => $e->getMessage()
+        ], 500);
     }
+}
 
-    public function cancel(Request $request, $id)
+
+
+
+    /**
+     * تأكيد الحجز
+     */
+    public function confirm($id)
     {
-        try {
-            $booking = Booking::where('customer_id', Auth::id())
-                ->where('id', $id)
-                ->where('status', 'pending')
-                ->firstOrFail();
+        $booking = Booking::with(['car', 'bookingCommissions'])->findOrFail($id);
 
-            return DB::transaction(function () use ($booking) {
-                $booking->update(['status' => 'cancelled', 'is_active' => false]);
+        if ($booking->status !== 'pending') {
+            return response()->json(['status' => 'error', 'message' => 'لا يمكن تأكيد هذا الحجز'], 422);
+        }
 
-                $wallet = Wallet::where('user_id', $booking->customer_id)->firstOrFail();
-                $wallet->update(['balance' => $wallet->balance + $booking->total]);
+        DB::transaction(function () use ($booking) {
+            // تطبيق العمولات
+            $booking->applyCommissions();
 
-                Transaction::create([
-                    'wallet_id' => $wallet->id,
-                    'amount' => $booking->total,
-                    'type' => 'refund',
-                    'status' => 'completed',
-                    'slug' => \Str::slug('refund-booking-' . $booking->id . '-' . now()->timestamp),
-                    'is_active' => true,
-                ]);
+            // خصم العمولات من المحافظ
+            $booking->deductCommissionsFromWallets();
 
-                return response()->json([
-                    'message' => 'Booking cancelled successfully',
-                    'data' => $booking
-                ]);
-            });
+            // دفع صافي المبلغ للمؤجر
+            $sellerWallet = Wallet::firstOrCreate(
+                ['user_id' => $booking->car->user_id],
+                ['balance' => 0, 'is_active' => true, 'slug' => 'wallet-' . $booking->car->user_id]
+            );
 
-        } catch (\Exception $e) {
-            \Log::error('Booking cancellation failed', [
-                'customer_id' => Auth::id(),
-                'booking_id' => $id,
-                'error' => $e->getMessage(),
+            $netAmount = $booking->total - $booking->commission_amount;
+
+            $sellerWallet->increment('balance', $netAmount);
+
+            Transaction::create([
+                'wallet_id' => $sellerWallet->id,
+                'amount' => $netAmount,
+                'type' => 'earning',
+                'status' => 'completed',
+                'slug' => 'booking-earning-' . now()->timestamp,
+                'is_active' => true,
             ]);
 
-            return response()->json(['message' => 'Failed to cancel booking', 'error' => $e->getMessage()], 500);
-        }
+            // تحديث حالة الحجز
+            $booking->update(['status' => 'confirmed']);
+        });
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'تم تأكيد الحجز بنجاح',
+            'data' => $booking->fresh(['bookingCommissions']),
+        ]);
     }
 
+    /**
+     * إلغاء الحجز (لو لسه pending)
+     */
+    public function cancel($id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        if ($booking->status !== 'pending') {
+            return response()->json(['status' => 'error', 'message' => 'لا يمكن إلغاء هذا الحجز'], 422);
+        }
+
+        DB::transaction(function () use ($booking) {
+            // استرجاع المبلغ للعميل
+            $wallet = Wallet::firstOrCreate(
+                ['user_id' => $booking->customer_id],
+                ['balance' => 0, 'is_active' => true, 'slug' => 'wallet-' . $booking->customer_id]
+            );
+
+            $wallet->increment('balance', $booking->total);
+
+            Transaction::create([
+                'wallet_id' => $wallet->id,
+                'amount' => $booking->total,
+                'type' => 'refund',
+                'status' => 'completed',
+                'slug' => 'booking-refund-' . now()->timestamp,
+                'is_active' => true,
+            ]);
+
+            $booking->update(['status' => 'cancelled']);
+        });
+
+        return response()->json(['status' => 'success', 'message' => 'تم إلغاء الحجز']);
+    }
 
     public function index(Request $request)
     {
@@ -163,7 +325,7 @@ class BookingController extends Controller
                 $q->where('customer_id', $user->id);
             }
         })
-        ->whereHas('car') // نتأكد إن الحجز مربوط بسيارة موجودة
+        ->whereHas('car')
         ->get();
 
         return response()->json([
@@ -181,7 +343,6 @@ class BookingController extends Controller
                     'total' => $booking->total,
                     'status' => $booking->status,
                     'contact_number' => $booking->contact_number,
-                    // 'gender' => $booking->gender,
                     'slug' => $booking->slug,
                     'image' => $booking->image,
                     'is_active' => $booking->is_active,
@@ -210,7 +371,8 @@ class BookingController extends Controller
             })
         ]);
     }
-        public function show(Request $request, $id)
+
+    public function show(Request $request, $id)
     {
         $locale = $request->header('Accept-Language', 'en');
         $user = Auth::user();
@@ -223,11 +385,9 @@ class BookingController extends Controller
         ])
         ->where('id', $id)
         ->where(function($q) use ($user) {
-            if ($user->hasAnyRole(['private renter', 'rental office'])) {
-                // يرجع الحجز لو صاحب السيارة
+            if ($user->hasAnyRole(['private_renter', 'rental_office'])) {
                 $q->whereHas('car', fn($c) => $c->where('user_id', $user->id));
             } else {
-                // العملاء العاديين
                 $q->where('customer_id', $user->id);
             }
         })
@@ -244,7 +404,6 @@ class BookingController extends Controller
                 'total' => $booking->total,
                 'status' => $booking->status,
                 'contact_number' => $booking->contact_number,
-                // 'gender' => $booking->gender,
                 'slug' => $booking->slug,
                 'image' => $booking->image,
                 'is_active' => $booking->is_active,
@@ -273,80 +432,7 @@ class BookingController extends Controller
     }
 
 
-    public function confirm(Request $request, $id)
-    {
-        try {
-            $booking = Booking::where('id', $id)
-                ->with('car')
-                ->firstOrFail();
-
-            // تحقق من الصلاحيات
-            // if (!Auth::user()->hasAnyRole(['admin', 'private renter', 'rental office']) || 
-            //     ($booking->car->user_id != Auth::id() && !Auth::user()->hasRole('admin'))) {
-            //     return response()->json(['message' => 'Unauthorized'], 403);
-            // }
-            
-
-            if (!Auth::user()->hasRole('admin') && $booking->car->user_id != Auth::id()) {
-                return response()->json(['message' => 'Unauthorized'], 403);
-            }
-
-
-            if ($booking->status != 'pending') {
-                return response()->json(['message' => 'Booking cannot be confirmed'], 422);
-            }
-
-            return DB::transaction(function () use ($booking) {
-
-                // تغيير حالة الحجز
-                $booking->update(['status' => 'completed']);
-
-                // إنشاء المحفظة إذا لم تكن موجودة وتحديث الرصيد
-                $renterWallet = Wallet::firstOrCreate(
-                    ['user_id' => $booking->car->user_id],
-                    [
-                        'balance' => 0,
-                        'is_active' => true,
-                        'slug' => \Str::slug('wallet-' . $booking->car->user_id)
-                    ]
-                );
-
-                $renterWallet->increment('balance', $booking->total);
-
-                // إنشاء العملية المالية
-                Transaction::create([
-                    'wallet_id' => $renterWallet->id,
-                    'amount' => $booking->total,
-                    'type' => 'payment',
-                    'status' => 'completed',
-                    'slug' => \Str::slug('payment-booking-' . $booking->id . '-' . now()->timestamp),
-                    'is_active' => true,
-                ]);
-
-                return response()->json([
-                    'message' => 'Booking confirmed successfully',
-                    'data' => $booking->load(
-                        'car.translations',
-                        'car.categories.translations',
-                        'car.featureValues.translations',
-                        'car.featureValues.feature.translations'
-                    )
-                ]);
-            });
-
-        } catch (\Exception $e) {
-            \Log::error('Booking confirmation failed', [
-                'user_id' => Auth::id(),
-                'booking_id' => $id,
-                'error' => $e->getMessage(),
-            ]);
-
-            return response()->json([
-                'message' => 'Failed to confirm booking',
-                'error' => $e->getMessage(),
-            ], 500);
-        }
-    }
+ 
 
     public function reject(Request $request, $id)
     {
@@ -355,14 +441,9 @@ class BookingController extends Controller
                 ->with('car')
                 ->firstOrFail();
 
-            // if (!Auth::user()->hasAnyRole(['admin', 'private renter', 'rental office']) || 
-            //     ($booking->car->user_id != Auth::id() && !Auth::user()->hasRole('admin'))) {
-            //     return response()->json(['message' => 'Unauthorized'], 403);
-            // }
             if (!Auth::user()->hasRole('admin') && $booking->car->user_id != Auth::id()) {
                 return response()->json(['message' => 'Unauthorized'], 403);
             }
-
 
             if ($booking->status != 'pending') {
                 return response()->json(['message' => 'Booking cannot be rejected'], 422);
@@ -379,7 +460,7 @@ class BookingController extends Controller
                     'amount' => $booking->total,
                     'type' => 'refund',
                     'status' => 'completed',
-                    'slug' => \Str::slug('refund-booking-' . $booking->id . '-' . now()->timestamp),
+                    'slug' => Str::slug('refund-booking-' . $booking->id . '-' . now()->timestamp),
                     'is_active' => true,
                 ]);
 
@@ -393,7 +474,6 @@ class BookingController extends Controller
                     )
                 ]);
             });
-
         } catch (\Exception $e) {
             \Log::error('Booking rejection failed', [
                 'user_id' => Auth::id(),
@@ -408,6 +488,12 @@ class BookingController extends Controller
         }
     }
 
+    
+
+    
+
+
+
     private function calculateTotalPrice(Car $car, $startDate, $endDate, array $optionIds)
     {
         $days = (new \DateTime($startDate))->diff(new \DateTime($endDate))->days;
@@ -420,5 +506,7 @@ class BookingController extends Controller
 
         return $basePrice + $optionsPrice;
     }
+
 }
-?>
+?> 
+

@@ -32,6 +32,7 @@ class CreateCarsTable extends Migration
             $table->softDeletes();
         });
 
+        
         Schema::create('car_translations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('car_id')->constrained()->onDelete('cascade');

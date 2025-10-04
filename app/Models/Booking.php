@@ -3,6 +3,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Carbon\Carbon;
+use App\Models\Commission;
+use App\Models\BookingCommission;
 
 class Booking extends Model
 {
@@ -11,7 +15,7 @@ class Booking extends Model
     protected $fillable = [
         'car_id', 'customer_id', 'start_date', 'end_date', 'total',
         'total_amount', 'commission_amount',
-        'extra_options', 'status', 'contact_number',  'slug', 'image', 'is_active', 'sort_order',
+        'extra_options', 'status', 'contact_number', 'seller_amount', 'base_price',  'slug', 'image', 'is_active', 'sort_order',
     ];
     protected $casts = [
           'total_amount' => 'decimal:2',
@@ -66,111 +70,195 @@ class Booking extends Model
         return asset('storage/cars/' . $value);
     }
 
+
+
     /**
-       * حساب وتطبيق العمولات تلقائيًا
-       */
-      public function applyCommissions()
-      {
-          $car = $this->car;
+     * حساب العمولات وتخزينها
+     */
 
-          // البحث عن العمولات النشطة لـ plate_type المحدد
-          $commissions = Commission::where('plate_type', $car->plate_type)
-              ->where('is_active', true)
-              ->get();
 
-          $totalCommission = 0;
-          $commissionRecords = [];
+    // public function applyCommissions()
+    // {
+    //     $carPlateType = $this->car->plate_type;
+    //     $basePrice = $this->base_price ?? $this->total; // لو عندك حقل base_price
 
-          foreach ($commissions as $commission) {
-              $amount = $commission->type === 'percentage'
-                  ? ($this->total_amount * $commission->value / 100)
-                  : $commission->value;
+    //     $commissions = Commission::where('plate_type', $carPlateType)
+    //         ->where('is_active', true)
+    //         ->get();
 
-              if ($commission->applies_to === 'both') {
-                  // تقسيم العمولة بين المشتري والبائع
-                  $buyerAmount = $amount / 2;
-                  $sellerAmount = $amount / 2;
+    //     $totalCommission = 0;
+    //     $buyerPays = $basePrice;
+    //     $sellerReceives = $basePrice;
 
-                  $commissionRecords[] = [
-                      'commission_id' => $commission->id,
-                      'amount' => $buyerAmount,
-                      'applies_to' => 'buyer',
-                  ];
-                  $commissionRecords[] = [
-                      'commission_id' => $commission->id,
-                      'amount' => $sellerAmount,
-                      'applies_to' => 'seller',
-                  ];
+ 
+    //     foreach ($commissions as $commission) {
+    //         $amount = $commission->type === 'percentage'
+    //             ? ($basePrice * $commission->value / 100)
+    //             : $commission->value;
 
-                  $totalCommission += $amount;
-              } else {
-                  // تطبيق العمولة على المستخدم المحدد
-                  $commissionRecords[] = [
-                      'commission_id' => $commission->id,
-                      'amount' => $amount,
-                      'applies_to' => $commission->applies_to,
-                  ];
+    //         // 👇 هنا بنحدد الأطراف
+    //         $appliesToList = $commission->applies_to === 'both'
+    //             ? ['buyer', 'seller']
+    //             : [$commission->applies_to];
 
-                  $totalCommission += $amount;
-              }
-          }
+    //         foreach ($appliesToList as $appliesTo) {
+    //             BookingCommission::updateOrCreate(
+    //                 [
+    //                     'booking_id'    => $this->id,
+    //                     'commission_id' => $commission->id,
+    //                     'applies_to'    => $appliesTo,   // ✅ مش بنخزن both
+    //                 ],
+    //                 [
+    //                     'amount' => $amount,
+    //                 ]
+    //             );
+    //             SiteCommission::updateOrCreate(
+    //                 [
+    //                     'booking_commission_id' => $bookingCommission->id,
+    //                     'applies_to'            => $appliesTo,
+    //                 ],
+    //                 [
+    //                     'amount'      => $amount,
+    //                     'description' => "Site commission for booking {$this->id}",
+    //                 ]
+    //             );
 
-          // تخزين سجلات العمولات
-          foreach ($commissionRecords as $record) {
-              $bookingCommission = $this->bookingCommissions()->create($record);
+    //             if ($appliesTo === 'seller') {
+    //                 $sellerReceives -= $amount;
+    //             } elseif ($appliesTo === 'buyer') {
+    //                 $buyerPays += $amount;
+    //             }
 
-              // تخزين عمولة الموقع في جدول منفصل
-              SiteCommission::create([
-                  'booking_commission_id' => $bookingCommission->id,
-                  'amount' => $bookingCommission->amount,
-                  'applies_to' => $bookingCommission->applies_to,
-                  'description' => 'Site commission for booking ' . $this->id,
-              ]);
-          }
+    //             $totalCommission += $amount;
+    //         }
+    //     }
 
-          // تحديث إجمالي العمولات
-          $this->commission_amount = $totalCommission;
-          $this->save();
 
-          // خصم العمولات من المحافظ
-          $this->deductCommissionsFromWallets();
-      }
 
-      /**
-       * خصم العمولات من المحافظ
-       */
-      private function deductCommissionsFromWallets()
-      {
-          foreach ($this->bookingCommissions as $bookingCommission) {
-              $userId = $bookingCommission->applies_to === 'buyer' 
-                  ? $this->user_id 
-                  : $this->car->user_id;
+    //     $this->update([
+    //         'commission_amount' => $totalCommission,
+    //         'base_price' => $basePrice,
+    //         'total' => $buyerPays,            // اللي العميل هيدفعه
+    //         'seller_amount' => $sellerReceives // اللي البائع هياخده
+    //     ]);
+    // }
 
-              $wallet = Wallet::where('user_id', $userId)->first();
 
-              if ($wallet && $wallet->balance >= $bookingCommission->amount) {
-                  $wallet->balance -= $bookingCommission->amount;
-                  $wallet->save();
+    public function applyCommissions()
+    {
+        $carPlateType = $this->car->plate_type;
+        $basePrice = $this->base_price ?? $this->total; // لو عندك حقل base_price
 
-                  $wallet->transactions()->create([
-                      'amount' => -$bookingCommission->amount,
-                      'type' => 'commission',
-                      'status' => 'completed',
-                      'slug' => Str::slug('commission-booking-' . $this->id . '-' . $bookingCommission->id . '-' . uniqid()),
-                      'is_active' => true,
-                  ]);
-              } else {
-                  // لو الرصيد مش كافي، ممكن نرفض الحجز أو نرسل تنبيه
-                  \Log::warning("Insufficient balance for commission deduction", [
-                      'booking_id' => $this->id,
-                      'commission_id' => $bookingCommission->id,
-                      'user_id' => $userId,
-                      'required_amount' => $bookingCommission->amount,
-                      'available_balance' => $wallet?->balance ?? 0,
-                  ]);
-              }
-          }
-      }
+        $commissions = Commission::where('plate_type', $carPlateType)
+            ->where('is_active', true)
+            ->get();
+
+        $totalCommission = 0;
+        $buyerPays = $basePrice;
+        $sellerReceives = $basePrice;
+
+        foreach ($commissions as $commission) {
+            $amount = $commission->type === 'percentage'
+                ? ($basePrice * $commission->value / 100)
+                : $commission->value;
+
+            // 👇 هنا بنحدد الأطراف
+            $appliesToList = $commission->applies_to === 'both'
+                ? ['buyer', 'seller']
+                : [$commission->applies_to];
+
+            foreach ($appliesToList as $appliesTo) {
+                // ✅ خزنا BookingCommission في متغير
+                $bookingCommission = BookingCommission::updateOrCreate(
+                    [
+                        'booking_id'    => $this->id,
+                        'commission_id' => $commission->id,
+                        'applies_to'    => $appliesTo,   // مش بنخزن both
+                    ],
+                    [
+                        'amount' => $amount,
+                    ]
+                );
+
+                // ✅ إنشاء SiteCommission مربوط بالـ BookingCommission
+                SiteCommission::updateOrCreate(
+                    [
+                        'booking_commission_id' => $bookingCommission->id,
+                        'applies_to'            => $appliesTo,
+                    ],
+                    [
+                        'amount'      => $amount,
+                        'description' => "Site commission for booking {$this->id}",
+                    ]
+                );
+
+                if ($appliesTo === 'seller') {
+                    $sellerReceives -= $amount;
+                } elseif ($appliesTo === 'buyer') {
+                    $buyerPays += $amount;
+                }
+
+                $totalCommission += $amount;
+            }
+        }
+
+        $this->update([
+            'commission_amount' => $totalCommission,
+            'base_price'        => $basePrice,
+            'total'             => $buyerPays,       // اللي العميل هيدفعه
+            'seller_amount'     => $sellerReceives,  // اللي البائع هياخده
+        ]);
+    }
+
+
+
+
+
+
+
+    /**
+     * خصم العمولات من المحافظ
+     */
+    public function deductCommissionsFromWallets()
+    {
+        foreach ($this->bookingCommissions as $commission) {
+            if ($commission->applies_to === 'seller') {
+                $sellerWallet = Wallet::firstOrCreate(
+                    ['user_id' => $this->car->user_id],
+                    ['balance' => 0, 'is_active' => true, 'slug' => 'wallet-' . $this->car->user_id]
+                );
+
+                $sellerWallet->decrement('balance', $commission->amount);
+
+                Transaction::create([
+                    'wallet_id' => $sellerWallet->id,
+                    'amount' => -$commission->amount,
+                    'type' => 'commission',
+                    'status' => 'completed',
+                    'slug' => 'commission-seller-' . $commission->id . '-' . now()->timestamp,
+                    'is_active' => true,
+                ]);
+            }
+
+            if ($commission->applies_to === 'buyer') {
+                $buyerWallet = Wallet::firstOrCreate(
+                    ['user_id' => $this->customer_id],
+                    ['balance' => 0, 'is_active' => true, 'slug' => 'wallet-' . $this->customer_id]
+                );
+
+                $buyerWallet->decrement('balance', $commission->amount);
+
+                Transaction::create([
+                    'wallet_id' => $buyerWallet->id,
+                    'amount' => -$commission->amount,
+                    'type' => 'commission',
+                    'status' => 'completed',
+                    'slug' => 'commission-buyer-' . $commission->id . '-' . now()->timestamp,
+                    'is_active' => true,
+                ]);
+            }
+        }
+    }
 
       protected static function boot()
       {

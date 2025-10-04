@@ -20,6 +20,9 @@ use App\Http\Controllers\Api\FeatureController;
 use App\Http\Controllers\Api\PublicController;
 use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\Api\WalletController;
+use App\Http\Controllers\Api\SupportController;
+use App\Http\Controllers\Api\PagesController;
+use App\Http\Controllers\Api\FAQController;
 // use App\Http\Controllers\Api\ChatController;
 use App\Http\Controllers\PaymentController; 
 // ------------------------
@@ -44,6 +47,13 @@ Route::controller(SocialAuthController::class)->group(function () {
 Route::prefix('features')->group(function () {
     Route::get('/', [FeatureController::class, 'index']);          // كل الـ features
     Route::delete('/{feature}', [FeatureController::class, 'destroy']); // feature واحدة
+});
+// support (Public)
+Route::prefix('pages')->group(function () {
+    Route::post('support', [SupportController::class, 'store']);
+    Route::get('/pages', [PagesController::class, 'index']);     // كل الصفحات
+    Route::get('/faqs', [FAQController::class, 'index']);
+    Route::get('/{slug}', [PagesController::class, 'show']); // صفحة محددة بالـ slug
 });
 
 // Public Controller Endpoints
@@ -86,8 +96,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Customer Routes
     Route::prefix('customer')->group(function () {
         Route::get('favorite-cars', [CustomerController::class, 'viewFavoriteCars']);
-        Route::get('suggested-cars', [CustomerController::class, 'viewSuggestedCars']);
-        Route::get('search', [CustomerController::class, 'advancedSearch']);
+        Route::get('suggested-cars', [PublicController::class, 'viewSuggestedCars']);
+        Route::get('search', [PublicController::class, 'advancedSearch']);
         Route::get('cars/{car}', [CustomerController::class, 'getCarDetails']);
 
         // Favorites
