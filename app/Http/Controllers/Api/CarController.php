@@ -23,11 +23,12 @@ public function store(Request $request)
     $validated = $request->validate([
         'name.en' => 'required|string|max:255',
         'name.ar' => 'required|string|max:255',
-        'model' => 'required|string|max:255',
-        'color' => 'required|string|max:255',
+        // 'model' => 'required|string|max:255',
+        // 'color' => 'required|string|max:255',
+        // 'engine_type' => 'required|string',
+        // 'car_type_id' => 'required|exists:car_types,id',
         'main_image' => 'required|image|mimes:jpeg,png,jpg,gif|max:9120', // ≤5MB
         'extra_images.*' => 'image|mimes:jpeg,png,jpg,gif|max:9120',
-        'engine_type' => 'required|string',
         'slug' => 'required|string|unique:cars,slug|max:255',
         'plate_type' => 'required|string',
         'rental_price' => 'required|numeric|min:0',
@@ -50,7 +51,6 @@ public function store(Request $request)
         'meta_description.ar' => 'nullable|string',
         'image_alt.en' => 'nullable|string|max:255',
         'image_alt.ar' => 'nullable|string|max:255',
-        'car_type_id' => 'required|exists:car_types,id',
         'category_ids' => 'array',
         'category_ids.*' => 'exists:categories,id',
         'feature_value_ids' => 'array',
@@ -77,12 +77,12 @@ public function store(Request $request)
         // إنشاء السيارة
         $car = Car::create([
             'user_id' => Auth::id(),
-            'car_type_id' => $validated['car_type_id'],
-            'model' => $validated['model'],
-            'color' => $validated['color'],
+            // 'car_type_id' => $validated['car_type_id'],
+            // 'model' => $validated['model'],
+            // 'color' => $validated['color'],
+            // 'engine_type' => $validated['engine_type'],
             'main_image' => $validated['main_image'],
             'extra_images' => $validated['extra_images'] ?? [],
-            'engine_type' => $validated['engine_type'],
             'slug' => $validated['slug'],
             'plate_type' => $validated['plate_type'],
             'rental_price' => $validated['rental_price'],
@@ -210,11 +210,12 @@ public function update(Request $request, Car $car)
     $validated = $request->validate([
         'name.en'              => 'sometimes|required|string|max:255',
         'name.ar'              => 'sometimes|required|string|max:255',
-        'model'                => 'sometimes|required|string|max:255',
-        'color'                => 'sometimes|required|string|max:255',
+        // 'model'                => 'sometimes|required|string|max:255',
+        // 'color'                => 'sometimes|required|string|max:255',
+        // 'engine_type'          => 'sometimes|required|string',
+        // 'car_type_id'          => 'sometimes|required|exists:car_types,id',
         'main_image'           => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
         'extra_images.*'       => 'nullable|image|mimes:jpeg,png,jpg,gif|max:5120',
-        'engine_type'          => 'sometimes|required|string',
         'slug'                 => 'sometimes|required|string|unique:cars,slug,' . $car->id . '|max:255',
         'plate_type'           => 'sometimes|required|string',
         'rental_price'         => 'sometimes|required|numeric|min:0',
@@ -237,7 +238,6 @@ public function update(Request $request, Car $car)
         'meta_description.ar'  => 'nullable|string',
         'image_alt.en'         => 'nullable|string|max:255',
         'image_alt.ar'         => 'nullable|string|max:255',
-        'car_type_id'          => 'sometimes|required|exists:car_types,id',
         'category_ids'         => 'sometimes|array',
         'category_ids.*'       => 'exists:categories,id',
         'feature_value_ids'    => 'sometimes|array',
@@ -284,8 +284,8 @@ public function update(Request $request, Car $car)
 
         // 6) Update normal fields
         $fields = [
-            'car_type_id', 'model', 'color', 'main_image', 'extra_images',
-            'engine_type', 'slug', 'plate_type', 'rental_price',
+            'car_type_id', 'model', 'color', 'engine_type', 'engine_type',
+             'main_image', 'extra_images', 'slug', 'plate_type', 'rental_price',
             'availability_start', 'availability_end', 'latitude', 'longitude',
             'long_term_guarantee', 'pickup_delivery', 'is_active'
         ];

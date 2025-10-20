@@ -14,9 +14,39 @@ use Illuminate\Support\Str;
 use Carbon\Carbon;
 use App\Mail\OtpMail;
 use Illuminate\Validation\ValidationException;
+use App\Services\MetaPixelService;
 
 class AuthController extends Controller
 {
+
+    
+
+    public function testPixel(MetaPixelService $pixelService)
+    {
+        $result = $pixelService->sendEvent('Purchase', [
+            'em' => [hash('sha256', 'test@example.com')],
+            'ph' => [hash('sha256', '201234567890')],
+        ], [
+            'currency' => 'USD',
+            'value' => 100.00,
+        ]);
+
+        \Log::info("Test Pixel Event Triggered", [
+            'event' => 'Purchase',
+            'user_data' => [
+                'em' => hash('sha256', 'test@example.com'),
+                'ph' => hash('sha256', '201234567890'),
+            ],
+            'custom_data' => [
+                'currency' => 'USD',
+                'value' => 100.00,
+            ],
+            'status' => $result ? 'success' : 'failed',
+        ]);
+
+        return "Event sent!";
+    }
+
 
 
     public function register(Request $request)
@@ -165,6 +195,11 @@ class AuthController extends Controller
 
         // إنشاء رمز Sanctum
         $token = $user->createToken('auth_token')->plainTextToken;
+        // إرسال حدث التسجيل
+        $pixel = new MetaPixelService();
+        $pixel->sendEvent('CompleteRegistration', [
+            'em' => [hash('sha256', strtolower(trim($user->email)))],
+        ]);
 
         return response()->json([
             'message' => 'Login successful.',

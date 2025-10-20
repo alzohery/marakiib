@@ -31,6 +31,7 @@ use App\Http\Controllers\PaymentController;
 
 // Auth
 Route::post('register', [AuthController::class, 'register']);
+Route::post('testPixel', [AuthController::class, 'testPixel']);
 Route::post('verify-otp', [AuthController::class, 'verifyOtp']);
 Route::post('login', [AuthController::class, 'login']);
 Route::post('resend-otp', [AuthController::class, 'resendOtp']);
@@ -77,7 +78,7 @@ Route::prefix('public')->group(function () {
 // ------------------------
 // Authenticated Endpoints
 // ------------------------
-Route::middleware('auth:sanctum')->group(function () {
+// Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('user', [AuthController::class, 'user']);
     Route::post('/user/update', [AuthController::class, 'update']);
@@ -112,9 +113,9 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // Admin Routes
-    Route::prefix('admin')->group(function () {
-        Route::apiResource('features', FeatureController::class);
-    });
+    // Route::prefix('admin')->group(function () {
+    //     Route::apiResource('features', FeatureController::class);
+    // });
 
     // Cars Management for Users with Permission
     // Route::middleware('permission:manage-cars')->group(function() {
@@ -186,7 +187,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         
 
-});
+// });
 
 // Webhook لـ MyFatoorah (بدون auth لأن الـ webhook بيجي من MyFatoorah)
 Route::post('webhook/myfatoorah', [WalletController::class, 'handleWebhook']);

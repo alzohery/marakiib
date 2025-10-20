@@ -1,6 +1,6 @@
 #!/bin/bash
 
-PORT=6000
+PORT=8000
 HOST="0.0.0.0"
 NGROK_WIN_PATH="C:\\ngrok\\ngrok.exe"
 
@@ -21,7 +21,15 @@ MEILI_PID=$!
 # تشغيل ngrok من Windows
 cd /mnt/c/ngrok || exit 1
 echo "🔗 Starting ngrok on port $PORT..."
-cmd.exe /c start "" "$NGROK_WIN_PATH" http $PORT
+# cmd.exe /c start "" "$NGROK_WIN_PATH" http $PORT
+# cmd.exe /c start "" "$NGROK_WIN_PATH" http --host-header="localhost:$PORT" $PORT
+
+cmd.exe /c start "" "$NGROK_WIN_PATH" http --host-header="localhost:$PORT" $PORT
+
+
+
+
+
 cd - > /dev/null
 
 echo "✅ ngrok is running"

@@ -97,7 +97,7 @@ class PagesController extends Controller
     protected function getModelBySlug(string $slug)
     {
         return match($slug) {
-            'about' => About::class,
+            'about-us' => About::class,
             'contact' => Contact::class,
             'terms' => Terms::class,
             'privacy' => Privacy::class,
